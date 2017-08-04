@@ -55,14 +55,9 @@ Simple example:
             ping = pb.Ping()
             ping.id = 1
             ping.ping = 'ping'
-            self.module_msg('user', ping)
-            ping.id = 2
-            self.hash_msg('user', 'key1', ping)
-            ping.id = 3
-            pong1 = self.module_call('user', ping)
-            ping.id = 4
-            pong2 = self.hash_call('user', 'key2', ping)
-            self.write(pong1.pong + '\t' + pong2.pong)
+            pong = self.hash_call('user', 'key', ping)
+            
+            self.write(pong.pong)
     
     class WorldHandler(BaseHandler):
         def do_POST(self):
