@@ -1,0 +1,26 @@
+x-torando
+=========
+
+All developed & tested in Ubuntu 16.04 x64, gcc version 5.4.
+
+C++ dep.
+---------
+* build boost & thrift, put them in cpplib/
+
+* build greenlet, put greentlet.so in src/bstrap/python/
+
+* cd src/bstrap/cpp, make
+
+Python dep.
+--------
+* tornado, put in pylib/
+
+Protobuf
+-----------
+* cd src/bstrap/python, protoc --proto_path=. --python_out=. route.proto
+
+Startup
+========
+* python start_user_server.py
+
+* export LD_LIBRARY_PATH=cpplib/boost/lib:cpplib/thrift/lib && python bin/start_http_server.py

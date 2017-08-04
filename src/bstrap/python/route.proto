@@ -1,0 +1,19 @@
+syntax='proto2';
+package kikyoo;
+
+enum RsltType {
+  STATUS_OK   = 0;
+  MSG_FORMAT  = 1;
+  RPC_TIMEOUT = 2;
+  NO_METHOD   = 3;
+}
+
+message Ping {
+  required int64 id = 1;
+  required string ping = 2;
+}
+
+message Pong {
+  required int64 id = 1;
+  required string pong = 2;
+}
