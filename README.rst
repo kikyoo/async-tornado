@@ -9,8 +9,9 @@ GET, POST
 Simple example:
 
 .. code-block:: python
+    
     route.proto
-    ------------------------
+    
     message Ping {
       required int64 id = 1;
       required string ping = 2;
@@ -22,8 +23,8 @@ Simple example:
     }
 
 
-    RpcServer--user/server.py
-    ------------------------
+    user/server.py
+
     class Server(CPython):
         def __init__(self, *args):
             pass
@@ -48,7 +49,7 @@ Simple example:
 
 
     http/server.py
-    ------------------------
+
     class HelloHandler(BaseHandler):
         def do_GET(self):
             ping = pb.Ping()
