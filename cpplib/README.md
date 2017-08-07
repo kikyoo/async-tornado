@@ -1,8 +1,8 @@
 boost
->>include
->>lib
+* include
+* lib
 
 thrift
->>bin
->>include
->>lib
+* bin
+* include
+* lib

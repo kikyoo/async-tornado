@@ -1,4 +1,4 @@
-x-tornado
+async-tornado
 =========
 
 Thrift(C++) for network communication, tornado as web server, while greenlet makes (async) rpc look like function call.
@@ -27,7 +27,7 @@ Simple example:
     user/server.py
 
     class Server(CPython):
-        def __init__(self, *args):
+        def __init__(self, \*args):
             pass
     
         def recv_module_call_Ping(self, ping):
