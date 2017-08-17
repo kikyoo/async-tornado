@@ -93,7 +93,7 @@ void InvokerTask::work_handle() {
   auto default_cb = [](PyObject* pobj, RsltType::type type = RsltType::RPC_TIMEOUT){
     auto cb = boost::make_shared<Callback>();
     cb->pobj = pobj;
-    cb->type = RsltType::RPC_TIMEOUT;
+    cb->type = type;
     return cb;
   };
 
