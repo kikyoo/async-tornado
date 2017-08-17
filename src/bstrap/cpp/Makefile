@@ -1,6 +1,7 @@
 .PHONY: all clean
 
 all:
+	mkdir -p common/gen-cpp
 	../../../cpplib/thrift/bin/thrift -out common/gen-cpp/ -gen cpp common/route.thrift
 	$(RM) common/gen-cpp/RouteService_server.skeleton.cpp
 	make -C server/

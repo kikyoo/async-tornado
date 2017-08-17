@@ -1,15 +1,16 @@
-#ifndef CPYTHON_H
-#define CPYTHON_
+#ifndef CPYTHON_HPP_
+#define CPYTHON_HPP_
 
 #include <string>
 #include <Python.h>
-
-#include <iostream>
+#include <boost/shared_ptr.hpp>
 
 namespace kikyoo {
 
 class CPython {
 public:
+  CPython();
+
   bool import(const std::string&,
     const std::string&,
     const std::string&);
@@ -33,29 +34,13 @@ public:
     const std::string& msg);
 
 private:
-  struct RefManager {
-    struct RefManager& add_ref(PyObject* pobj) {
-      if (pobj) {
-        m_pobj_ref_.push_back(pobj);
-      }
-      return *this;
-    }
-    void release_ref(void) {
-      for (const auto pobj: m_pobj_ref_) {
-        Py_DECREF(pobj);
-      }
-    }
-    ~RefManager() {
-      release_ref();
-    }
-    std::list<PyObject*> m_pobj_ref_;
-  };
-private:
   PyObject*  m_inst_;
-  RefManager m_rmgr_;
+
+  struct RefManager;
+  boost::shared_ptr<RefManager> m_rmgr_;
 };
 
+}
 
 #endif
 
-}

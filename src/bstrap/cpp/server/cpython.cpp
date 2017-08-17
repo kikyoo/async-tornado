@@ -3,6 +3,27 @@
 
 namespace kikyoo {
 
+struct CPython::RefManager {
+  struct RefManager& add_ref(PyObject* pobj) {
+    if (pobj) {
+      m_pobj_ref_.push_back(pobj);
+    }
+    return *this;
+  }
+  void release_ref(void) {
+    for (const auto pobj: m_pobj_ref_) {
+      Py_DECREF(pobj);
+    }
+  }
+  ~RefManager() {
+    release_ref();
+  }
+  std::list<PyObject*> m_pobj_ref_;
+};
+
+CPython::CPython(): m_rmgr_(new CPython::RefManager) {
+}
+
 bool CPython::import(const std::string& cpy_path,
   const std::string& srv_path,
   const std::string& conf_file) {
@@ -19,41 +40,36 @@ bool CPython::import(const std::string& cpy_path,
   PyRun_SimpleString(spath.c_str()); 
 
   auto* pModule = PyImport_ImportModule("server");
-  m_rmgr_.add_ref(pModule);
+  m_rmgr_->add_ref(pModule);
   if (!pModule) {
-    std::cout << "Cant open python file!" << std::endl;
     return false;
   }
 
   auto* pDict = PyModule_GetDict(pModule);
-  m_rmgr_.add_ref(pDict);
+  m_rmgr_->add_ref(pDict);
   if (!pDict) {
-    std::cout <<  "Cant find dictionary!" << std::endl;
     return false;
   }
 
   auto* pClass = PyDict_GetItemString(pDict, "Server");
-  m_rmgr_.add_ref(pClass);
+  m_rmgr_->add_ref(pClass);
   if (!pClass) {
-    std::cout << "Cant find class." << std::endl;;
     return false; 
   }
 
   auto* pargs = PyTuple_New(1);
   auto* item0 = Py_BuildValue("s", conf_file.c_str());
-  m_rmgr_.add_ref(pargs);
+  m_rmgr_->add_ref(pargs);
   if (!pargs || !item0) {
-    std::cout << "Cant create instance args." << std::endl;
     return false;
   }
   PyTuple_SetItem(pargs, 0, item0);
 
   m_inst_ = PyInstance_New(pClass, pargs, NULL);
   if (!m_inst_) {
-    std::cout << "Cant create instance." << std::endl;
     return false;
   }
-  m_rmgr_.add_ref(m_inst_);
+  m_rmgr_->add_ref(m_inst_);
 
   return true;
 }
@@ -124,3 +140,4 @@ void CPython::module_msg(const std::string& name,
 }
 
 }
+

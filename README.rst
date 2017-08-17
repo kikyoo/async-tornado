@@ -27,7 +27,7 @@ Simple example:
     user/server.py
 
     class Server(CPython):
-        def __init__(self, \*args):
+        def __init__(self, *args):
             pass
     
         def recv_module_call_Ping(self, ping):
@@ -57,7 +57,6 @@ Simple example:
             ping.id = 1
             ping.ping = 'ping'
             pong = self.hash_call('user', 'key', ping)
-            
             self.write(pong.pong)
     
     class WorldHandler(BaseHandler):

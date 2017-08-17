@@ -1,73 +1,110 @@
-#include <thread>
-#include <iostream>
-#include <stdio.h>
-#include <unistd.h>
-#include <iostream>
-#include <boost/make_shared.hpp>
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TTransportUtils.h>
-#include "RouteService.h"  
-
+#include "config.hpp"
 #include "invoker.hpp"
+#include "invoker_task.hpp"
+#include "dispatch_task.hpp"
+#include "callback_task.hpp"
+#include <thrift/concurrency/Util.h>
+#include <thrift/concurrency/PlatformThreadFactory.h>
 
-using namespace std;
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
-
+#include <iostream>
 using namespace kikyoo;
+using namespace apache::thrift::concurrency;
 
-struct Message {
-  PyObject* pobj;
-  int64_t birth_time;
-  kikyoo::MsgType::type type;
-  std::string server;
-  std::string key;
-  std::string name;
-  std::string msg;
-};
 
-struct Callback {
-  PyObject* pobj;
-  kikyoo::RsltType::type type;
-  std::string name;
-  std::string msg;
-};
-
-static MessagePtr SillyMan(PyObject* pobj,
+static RpcPtr silly_man(PyObject* pobj,
   const std::string& server,
   const std::string& key,
   const std::string& name,
   const std::string& msg,
-  const kikyoo::MsgType::type& type) {
+  const MsgType::type& type) {
 
-  auto msg_ptr = boost::make_shared<Message>();
-  msg_ptr->pobj = pobj;
-  msg_ptr->birth_time = GetNowMsec();
-  msg_ptr->type = type;
-  msg_ptr->server.assign(server);
-  msg_ptr->key.assign(key);
-  msg_ptr->name.assign(name);
-  msg_ptr->msg.assign(msg);
+  auto rpc = boost::make_shared<Rpc>();
+  rpc->pobj = pobj;
+  rpc->birth_time = Util::currentTime();
+  rpc->type = type;
+  rpc->server.assign(server);
+  rpc->key.assign(key);
+  rpc->name.assign(name);
+  rpc->request.assign(msg);
 
-  return msg_ptr;
+  return rpc;
 }
 
-FifoQueue<MessagePtr> Invoker::in_queue(100000);
-FifoQueue<CallbackPtr> Invoker::out_queue(100000);
-std::atomic<bool> Invoker::m_stop(false);
-
-Invoker::Invoker(int i){
-
+Invoker::Invoker(PyObject* conf)
+  : timeout_(10)
+  , queue_size_(10000)
+  , event_list_(boost::make_shared<EventBuffer<NodePtr>>()) {
   PyEval_InitThreads();
+  init_invoker(conf);
+}
 
-  std::thread tcb(call_back);
-  tcb.detach();
+void Invoker::init_invoker(PyObject* conf) {
+  Config config(conf);
+  timeout_ = config.timeout();
+  queue_size_ = config.queue_size();
 
-  std::thread trc(rpc_call);
-  trc.detach();
+  if (timeout_ <= 0) {
+    timeout_ = 10;
+  }
+  if (config.queue_size() <=0 || config.host_max() <= 0) {
+    return;
+  }
+  rpc_queue_ = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);
+  std::cout << rpc_queue_->capacity() << std::endl;
+  cb_queue_  = boost::make_shared<FifoQueue<CallbackPtr, NullMutex, Mutex>>(queue_size_);
+  std::cout << cb_queue_->capacity() << std::endl;
+  invoker_queues_ = boost::make_shared<std::vector<RequestQueueType>>(config.host_max());
+  for (size_t i=0; i<config.host_max(); i++) {
+    (*invoker_queues_)[i] = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);
+  }
 
+  //tmp invoker task vec
+  std::vector<boost::shared_ptr<InvokerTask>> tasks;
+  for (size_t i=0; i<config.host_max(); i++) {
+    tasks.push_back(boost::shared_ptr<InvokerTask>(new InvokerTask(event_list_, 
+          (*invoker_queues_)[i],
+          cb_queue_,
+          timeout_)));
+  }
+  //assign node
+  size_t node_sum = 0;
+  for (auto& server: config.route_map()) {
+    for (auto& host: server.second) {
+      auto node = boost::make_shared<Node>();
+      node->seq_id = node_sum ++;
+      node->server = server.first;
+      node->host   = std::get<0>(host);
+      node->port   = std::get<1>(host);
+      tasks[node->seq_id%tasks.size()]->add_node(node);
+    }
+  }
+
+  //add invoker threads
+  boost::shared_ptr<PlatformThreadFactory> factory
+    = boost::shared_ptr<PlatformThreadFactory>(new PlatformThreadFactory());
+  for (auto& task: tasks) {
+    client_threads_.insert(factory->newThread(task));
+  }
+
+  //add dispatch task thread
+  client_threads_.insert(factory->newThread(
+      boost::shared_ptr<DispatchTask>(new DispatchTask(
+          event_list_,
+          rpc_queue_,
+          invoker_queues_,
+          cb_queue_,
+          timeout_))));
+
+  //add callback task thread
+  client_threads_.insert(factory->newThread(
+      boost::shared_ptr<CallbackTask>(new CallbackTask(
+          cb_queue_,
+          tasks.size()))));
+
+  //start all task threads
+  for (auto& thread: client_threads_) {
+    thread->start();
+  }
 }
 
 void Invoker::hash_call(PyObject* pobj,
@@ -75,120 +112,57 @@ void Invoker::hash_call(PyObject* pobj,
   const std::string& key,
   const std::string& name,
   const std::string& msg) {
-  auto msg_ptr = SillyMan(pobj,
+  auto rpc = silly_man(pobj,
     server,
     key,
     name,
     msg,
-    kikyoo::MsgType::H_CALL);
-  while(!in_queue.push_back(msg_ptr));
+    MsgType::H_CALL);
+  while(!rpc_queue_->push_back(rpc));
 }
 
 void Invoker::module_call(PyObject* pobj,
   const std::string& server,
   const std::string& name,
   const std::string& msg) {
-  auto msg_ptr = SillyMan(pobj,
+  auto rpc = silly_man(pobj,
     server,
     "",
     name,
     msg,
-    kikyoo::MsgType::M_CALL);
-  while(!in_queue.push_back(msg_ptr));
+    MsgType::M_CALL);
+  while(!rpc_queue_->push_back(rpc));
 }
 
 void Invoker::hash_msg(const std::string& server,
   const std::string& key,
   const std::string& name,
   const std::string& msg) {
-  auto msg_ptr = SillyMan(NULL,
+  auto rpc = silly_man(NULL,
     server,
     key,
     name,
     msg,
-    kikyoo::MsgType::H_MSG);
+    MsgType::H_MSG);
+  while(!rpc_queue_->push_back(rpc));
 }
 
 void Invoker::module_msg(const std::string& server,
   const std::string& name,
-  const std::string& msg)
-{
-  auto msg_ptr = SillyMan(NULL,
+  const std::string& msg) {
+  auto rpc = silly_man(NULL,
     server,
     "",
     name,
     msg,
-    kikyoo::MsgType::M_MSG);
-  while(!in_queue.push_back(msg_ptr));
+    MsgType::M_MSG);
+  while(!rpc_queue_->push_back(rpc));
 }
 
-void Invoker::rpc_call() {
-  const int port =  9090;
-  boost::shared_ptr<TTransport> socket(new TSocket("localhost", port));
-  boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-  RouteServiceClient client(protocol);
-
-  try {
-    transport->open();
-
-    boost::shared_ptr<Message> msg_ptr;
-    while (!m_stop) {
-      while (in_queue.pop_front(0.1, msg_ptr)) {
-        Msg msg;
-        msg.type = msg_ptr->type;
-        msg.name = msg_ptr->name;
-        msg.msg = msg_ptr->msg;
-        msg.key = msg_ptr->key;
-        msg.__isset.key = true;
-        if (msg_ptr->type & (kikyoo::MsgType::M_CALL|kikyoo::MsgType::H_CALL)) {
-          Rslt rslt;
-          client.call(rslt, msg);
-          auto cb_ptr = boost::make_shared<Callback>();
-          cb_ptr->pobj = msg_ptr->pobj;
-          cb_ptr->type = rslt.status;
-          cb_ptr->name.assign(rslt.name);
-          cb_ptr->msg.assign(rslt.msg);
-          while(!out_queue.push_back(cb_ptr));
-        } else {
-          client.message(msg);
-        }
-      }
-    }
-
-    transport->close();
-  } catch (TException& tx) {
-    std::cout << "ERROR: " << tx.what() << std::endl;
-  }
+void Invoker::stop() {
+  auto rpc  = boost::make_shared<Rpc>();
+  rpc->type = MsgType::M_STOP;
+  while(!rpc_queue_->push_back(rpc));
 }
 
-void Invoker::call_back()
-{
-
-  struct ScopeLock{
-    ScopeLock() {
-      state = PyGILState_Ensure();
-    }
-    ~ScopeLock() {
-      PyGILState_Release(state);
-    }
-    private: 
-      PyGILState_STATE state;
-  };
-
-  namespace python = boost::python;
-
-  boost::shared_ptr<Callback> cb_ptr;
-  while (!m_stop) {
-    while (out_queue.pop_front(0.1, cb_ptr)) {
-      ScopeLock lock;
-      python::handle<> handle(python::borrowed(cb_ptr->pobj));
-      python::call_method<void>(handle.get(), 
-        "cb", 
-        (int)cb_ptr->type,
-        cb_ptr->name,
-        cb_ptr->msg);
-    }
-  }
-}
 

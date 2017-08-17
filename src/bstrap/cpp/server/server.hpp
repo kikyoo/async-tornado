@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef SERVER_HPP_
+#define SERVER_HPP_
 
 #include "RouteService.h"  
 
@@ -37,9 +37,11 @@ public:
   ~RouteServiceCloneFactory();
 
   virtual RouteServiceIf* getHandler(const ::apache::thrift::TConnectionInfo& connInfo) {
+    std::cout << "new handler" << std::endl;
     return new RouteServiceHandler(m_pobj_);
   }
   virtual void releaseHandler(RouteServiceIf* handler) {
+    std::cout << "del handler" << std::endl;
     delete handler;
   }
 private:

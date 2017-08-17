@@ -15,9 +15,9 @@ class Invoker(object):
         def cb(self, status, name, msg):
             tornado.ioloop.IOLoop.instance().add_callback(partial(self.grt.switch, status, name, msg))
 
-    def __init__(self, **config):
+    def __init__(self, **conf):
         self.sdb = pb._sym_db
-        self.invoker = kikyoo.Invoker(0)
+        self.invoker = kikyoo.Invoker(conf)
 
     def __parse_ret(self, status, name, msg):
         if pb.STATUS_OK == status:
@@ -39,7 +39,7 @@ class Invoker(object):
         name = msg.DESCRIPTOR.full_name
         grt = greenlet.getcurrent()
         cb = Invoker.Callback(grt)
-        self.invoker.hash_call(cb, server, key, name, msg_)
+        self.invoker.hash_call(cb, server, str(key), name, msg_)
         status, name, msg = grt.parent.switch()
         return self.__parse_ret(status, name, msg)
         
@@ -55,7 +55,7 @@ class Invoker(object):
     def hash_msg(self, server, key, msg):
         msg_ = msg.SerializeToString()
         name = msg.DESCRIPTOR.full_name
-        self.invoker.hash_msg(server, key, name, msg_)
+        self.invoker.hash_msg(server, str(key), name, msg_)
 
     def module_msg(self, server, msg):
         msg_ = msg.SerializeToString()

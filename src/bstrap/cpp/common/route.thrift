@@ -4,7 +4,8 @@ enum MsgType {
   H_CALL = 0x1,
   H_MSG  = 0x2,
   M_CALL = 0x4,
-  M_MSG  = 0x8
+  M_MSG  = 0x8,
+  M_STOP = 0x10
 }
 
 struct Msg {
@@ -15,10 +16,11 @@ struct Msg {
 }
 
 enum RsltType {
-  STATUS_OK   = 0,
-  MSG_FORMAT  = 1,
-  RPC_TIMEOUT = 2,
-  NO_METHOD   = 3,
+  STATUS_OK   = 0x0,
+  MSG_FORMAT  = 0x1,
+  RPC_TIMEOUT = 0x2,
+  NO_METHOD   = 0x4,
+  M_STOP      = 0x10
 }
 
 struct Rslt {
