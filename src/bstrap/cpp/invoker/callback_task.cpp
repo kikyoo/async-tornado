@@ -26,6 +26,7 @@ CallbackTask::CallbackTask(CbQueueType cb_queue,
 void CallbackTask::work_handle() {
   CallbackPtr cb;
   size_t loop = 0;
+  //std::cout << __FILE__ << ':' << __LINE__ << std::endl;
   while(loop++ < CallbackTask::LOOP_MAX
     && cb_queue_->pop_front(CallbackTask::POP_WAIT, cb)) {
 

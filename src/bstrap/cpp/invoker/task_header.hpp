@@ -45,6 +45,10 @@ struct Callback {
 typedef boost::shared_ptr<Callback> CallbackPtr;
 std::ostream& operator << (std::ostream &os, const CallbackPtr cb);
 
+typedef boost::shared_ptr<FifoQueue<RpcPtr>> RequestQueueType;//single reader, single writer
+typedef boost::shared_ptr<std::vector<RequestQueueType>> MulRequestQueueType;
+typedef boost::shared_ptr<FifoQueue<CallbackPtr, NullMutex, Mutex>> CbQueueType;//single reader, mul writer
+
 struct Node {
   enum State{
     UNINITIALIZED,
@@ -59,6 +63,7 @@ struct Node {
   int64_t reconnect_times;
   int64_t last_reconnect_time;
   boost::shared_ptr<RouteServiceClient> client_ptr;
+  RequestQueueType rpc_queue_ptr;
 
   Node()
     : seq_id(0) 
@@ -70,12 +75,7 @@ struct Node {
 typedef boost::shared_ptr<Node> NodePtr;
 std::ostream& operator << (std::ostream &os, const NodePtr node);
 
-//typedef some useful FifoQueue
 typedef boost::shared_ptr<EventBuffer<NodePtr>> EventListType;
-typedef boost::shared_ptr<FifoQueue<RpcPtr>> RequestQueueType;//single reader, single writer
-typedef boost::shared_ptr<FifoQueue<CallbackPtr, NullMutex, Mutex>> CbQueueType;//single reader, mul writer
-
-typedef boost::shared_ptr<std::vector<RequestQueueType>> InvokerQueueType;
 }
 #endif
 

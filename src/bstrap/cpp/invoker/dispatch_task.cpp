@@ -8,12 +8,12 @@ namespace kikyoo {
 
 DispatchTask::DispatchTask(EventListType event_list,
   RequestQueueType rpc_queue,
-  InvokerQueueType invoker_queues,
+  MulRequestQueueType rpc_queues,
   CbQueueType cb_queue,
   int timeout)
   : event_list_(event_list)
   , rpc_queue_(rpc_queue)
-  , invoker_queues_(invoker_queues)
+  , rpc_queues_(rpc_queues)
   , cb_queue_(cb_queue)
   , timeout_(timeout) {
 }
@@ -45,8 +45,8 @@ void DispatchTask::work_handle() {
     //stop message recved
     if (MsgType::M_STOP & rpc->type) {
       //send stop message to all invoker threads
-      for (auto& queue: *invoker_queues_) {
-        //std::cout << __FILE__ << ':' << __LINE__ << ' ' << rpc << std::endl;
+      for (auto& queue: *rpc_queues_) {
+        std::cout << __FILE__ << ':' << __LINE__ << ' ' << rpc << std::endl;
         while(!queue->push_back(rpc));
       }
       m_stop_ = true;
@@ -85,8 +85,8 @@ void DispatchTask::work_handle() {
     auto& node = it->second.hosts[rpc->hash_key % it->second.hosts.size()];
     //std::cout << __FILE__ << ':' << __LINE__ << ' ' << node << std::endl;
 
-    auto& queue = (*invoker_queues_)[node->seq_id % invoker_queues_->size()];
-    while(!queue->push_back(rpc));
+    //auto& queue = (*rpc_queues_)[node->seq_id % rpc_queues_->size()];
+    while(!node->rpc_queue_ptr->push_back(rpc));
   }
 }
 

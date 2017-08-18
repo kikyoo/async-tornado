@@ -43,13 +43,13 @@ private:
 private:
   EventListType event_list_;
   RequestQueueType rpc_queue_; 
-  InvokerQueueType invoker_queues_;
+  MulRequestQueueType rpc_queues_;
   CbQueueType cb_queue_;
 
 private:
   int timeout_;
   int queue_size_;
-  std::set<boost::shared_ptr<Thread>> client_threads_;
+  std::set<boost::shared_ptr<Thread>> task_threads_;
 };
 
 #endif

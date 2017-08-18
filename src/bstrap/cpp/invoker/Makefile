@@ -3,8 +3,8 @@
 TARGET=../../python/kikyoo.so
 all:$(TARGET)
 
-CXXFLAGS=-std=c++11 -g -O0 -fPIC
-LDFLAGS=-fPIC -shared -g -O0 -L../../../../cpplib/thrift/lib -L../../../../cpplib/boost/lib -L../../../../cpplib/openssl/lib -L../../../../cpplib/libevent/lib
+CXXFLAGS=-std=c++11 -g -O3 -fPIC
+LDFLAGS=-fPIC -shared -g -O3 -L../../../../cpplib/thrift/lib -L../../../../cpplib/boost/lib -L../../../../cpplib/openssl/lib -L../../../../cpplib/libevent/lib
 INCLUDES=-I/usr/include/python2.7  -I../../../../cpplib/boost/include/ -I../../../../cpplib/thrift/include/ -I../common/gen-cpp/ 
 LIBS=-lthrift -lpthread -lpython2.7 -lboost_python
 

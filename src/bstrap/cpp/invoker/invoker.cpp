@@ -53,16 +53,16 @@ void Invoker::init_invoker(PyObject* conf) {
   std::cout << rpc_queue_->capacity() << std::endl;
   cb_queue_  = boost::make_shared<FifoQueue<CallbackPtr, NullMutex, Mutex>>(queue_size_);
   std::cout << cb_queue_->capacity() << std::endl;
-  invoker_queues_ = boost::make_shared<std::vector<RequestQueueType>>(config.host_max());
+  rpc_queues_ = boost::make_shared<std::vector<RequestQueueType>>(config.host_max());
   for (size_t i=0; i<config.host_max(); i++) {
-    (*invoker_queues_)[i] = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);
+    (*rpc_queues_)[i] = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);
   }
 
   //tmp invoker task vec
   std::vector<boost::shared_ptr<InvokerTask>> tasks;
   for (size_t i=0; i<config.host_max(); i++) {
     tasks.push_back(boost::shared_ptr<InvokerTask>(new InvokerTask(event_list_, 
-          (*invoker_queues_)[i],
+          (*rpc_queues_)[i],
           cb_queue_,
           timeout_)));
   }
@@ -75,6 +75,7 @@ void Invoker::init_invoker(PyObject* conf) {
       node->server = server.first;
       node->host   = std::get<0>(host);
       node->port   = std::get<1>(host);
+      node->rpc_queue_ptr = (*rpc_queues_)[node->seq_id%rpc_queues_->size()];
       tasks[node->seq_id%tasks.size()]->add_node(node);
     }
   }
@@ -83,26 +84,26 @@ void Invoker::init_invoker(PyObject* conf) {
   boost::shared_ptr<PlatformThreadFactory> factory
     = boost::shared_ptr<PlatformThreadFactory>(new PlatformThreadFactory());
   for (auto& task: tasks) {
-    client_threads_.insert(factory->newThread(task));
+    task_threads_.insert(factory->newThread(task));
   }
 
   //add dispatch task thread
-  client_threads_.insert(factory->newThread(
+  task_threads_.insert(factory->newThread(
       boost::shared_ptr<DispatchTask>(new DispatchTask(
           event_list_,
           rpc_queue_,
-          invoker_queues_,
+          rpc_queues_,
           cb_queue_,
           timeout_))));
 
   //add callback task thread
-  client_threads_.insert(factory->newThread(
+  task_threads_.insert(factory->newThread(
       boost::shared_ptr<CallbackTask>(new CallbackTask(
           cb_queue_,
           tasks.size()))));
 
   //start all task threads
-  for (auto& thread: client_threads_) {
+  for (auto& thread: task_threads_) {
     thread->start();
   }
 }

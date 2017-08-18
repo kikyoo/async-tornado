@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <unistd.h>
 #include "invoker.hpp"
+#include <iostream>
 
 int main() {
   Py_Initialize();
@@ -23,16 +24,17 @@ int main() {
 
   Invoker invo(dict);
 
-  int i = 60;
+  int i = 10;
   while(i--) {
     sleep(1);
   }
 
   invo.stop();
 
-  i = 60;
+  i = 10;
   while(i--) {
     sleep(1);
+    std::cout << "stop!" << std::endl;
   }
 
   Py_DECREF(dict);

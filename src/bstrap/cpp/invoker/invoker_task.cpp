@@ -90,7 +90,7 @@ void InvokerTask::event_handle() {
 }
 
 void InvokerTask::work_handle() {
-  auto default_cb = [](PyObject* pobj, RsltType::type type = RsltType::RPC_TIMEOUT){
+  auto make_cb = [](PyObject* pobj, RsltType::type type = RsltType::RPC_TIMEOUT){
     auto cb = boost::make_shared<Callback>();
     cb->pobj = pobj;
     cb->type = type;
@@ -107,8 +107,8 @@ void InvokerTask::work_handle() {
 
     //stop message recved
     if (MsgType::M_STOP & rpc->type) {
-      //std::cout << __FILE__ << ':' << __LINE__ << ' ' << rpc << std::endl;
-      auto cb = default_cb(rpc->pobj, RsltType::M_STOP);
+      std::cout << __FILE__ << ':' << __LINE__ << ' ' << rpc << std::endl;
+      auto cb = make_cb(rpc->pobj, RsltType::M_STOP);
       while(!cb_queue_->push_back(cb));
       m_stop_ = true;
       break;
@@ -118,7 +118,7 @@ void InvokerTask::work_handle() {
     if (Util::currentTime()-rpc->birth_time > timeout_) {
       //std::cout << __FILE__ << ':' << __LINE__ << ' ' << rpc << std::endl;
       if (rpc->type & (MsgType::M_CALL|MsgType::H_CALL)) {
-        auto cb = default_cb(rpc->pobj);
+        auto cb = make_cb(rpc->pobj);
         while(!cb_queue_->push_back(cb));
       }
       continue;
@@ -128,13 +128,14 @@ void InvokerTask::work_handle() {
     auto client = clients_.find(rpc->server);
     if (clients_.cend() == client) {
       if (rpc->type & (MsgType::M_CALL|MsgType::H_CALL)) {
-        auto cb = default_cb(rpc->pobj);
+        auto cb = make_cb(rpc->pobj);
         //std::cout << __FILE__ << ':' << __LINE__ << ' ' << cb << std::endl;
         while(!cb_queue_->push_back(cb));
       }
       continue;
     }
 
+    //std::cout << __FILE__ << ':' << __LINE__ << ' ' << client->second << std::endl;
     auto client_ptr = client->second->client_ptr;
     //call | msg
     try {
@@ -159,7 +160,7 @@ void InvokerTask::work_handle() {
       }
     } catch (...) {
       if (rpc->type & (MsgType::M_CALL|MsgType::H_CALL)) {
-        auto cb = default_cb(rpc->pobj);
+        auto cb = make_cb(rpc->pobj);
         //std::cout << __FILE__ << ':' << __LINE__ << ' ' << cb << std::endl;
         while(!cb_queue_->push_back(cb));
       }

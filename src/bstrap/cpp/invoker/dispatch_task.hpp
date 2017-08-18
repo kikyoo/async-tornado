@@ -20,7 +20,7 @@ public:
 
   DispatchTask(EventListType event_list,
     RequestQueueType rpc_queue,
-    InvokerQueueType invoker_queues,
+    MulRequestQueueType rpc_queues,
     CbQueueType cb_queue,
     int timeout);
 
@@ -35,7 +35,7 @@ private:
 private:
   EventListType event_list_;
   RequestQueueType rpc_queue_; 
-  InvokerQueueType invoker_queues_;
+  MulRequestQueueType rpc_queues_;
   CbQueueType cb_queue_;
 
 private:

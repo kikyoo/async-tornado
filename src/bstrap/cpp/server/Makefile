@@ -3,8 +3,8 @@
 TARGET=server
 all:$(TARGET)
 
-CXXFLAGS=-std=c++11 -g -Wno-write-strings
-LDFLAGS=-g -L../../../../cpplib/thrift/lib -L../../../../cpplib/boost/lib
+CXXFLAGS=-std=c++11 -g -O3 -Wno-write-strings
+LDFLAGS=-g -O3 -L../../../../cpplib/thrift/lib -L../../../../cpplib/boost/lib
 INCLUDES=-I/usr/include/python2.7 -I../../../../cpplib/boost/include/ -I../../../../cpplib/thrift/include/ -I../common/gen-cpp/ 
 LIBS=-lthrift -lpthread -lpython2.7 -lboost_program_options
 
