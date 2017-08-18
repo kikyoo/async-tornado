@@ -26,18 +26,23 @@ CPython::CPython(): m_rmgr_(new CPython::RefManager) {
 
 bool CPython::import(const std::string& cpy_path,
   const std::string& srv_path,
+  const std::string& pylib_path,
   const std::string& conf_file) {
 
-  std::string cpath, spath;
+  std::string cpath, spath, ppath;
   cpath.append("sys.path.append('")
     .append(cpy_path)
     .append("')");
   spath.append("sys.path.append('")
     .append(srv_path)
     .append("')");
+  ppath.append("sys.path.append('")
+    .append(pylib_path)
+    .append("')");
   PyRun_SimpleString("import sys");  
   PyRun_SimpleString(cpath.c_str()); 
   PyRun_SimpleString(spath.c_str()); 
+  PyRun_SimpleString(ppath.c_str()); 
 
   auto* pModule = PyImport_ImportModule("server");
   m_rmgr_->add_ref(pModule);

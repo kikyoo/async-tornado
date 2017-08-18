@@ -52,12 +52,13 @@ void RouteServiceHandler::message(const Msg& msg) {
 
 RouteServiceCloneFactory::RouteServiceCloneFactory(const std::string& cpy_path,
   const std::string& srv_path,
+  const std::string& pylib_path,
   const std::string& conf_file) {
 
   Py_Initialize(); 
 
   m_pobj_ = boost::make_shared<CPython>();
-  if (!m_pobj_->import(cpy_path, srv_path, conf_file)) {
+  if (!m_pobj_->import(cpy_path, srv_path, pylib_path, conf_file)) {
     abort();
   }
 }

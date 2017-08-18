@@ -32,15 +32,17 @@ int main(int argc, char* argv[]) {
   bool daemon = false;
   std::string cpy_path;
   std::string srv_path;
+  std::string pylib_path;
   std::string conf_file;
   po::options_description desc("Allowed options");
   desc.add_options()
-    ("help,h",    "print help message")
-    ("daemon",    "run as system daemon")
-    ("port",      po::value<int>(&port)->default_value(port), "port number to listen")
-    ("cpy_path",  po::value<std::string>(&cpy_path)->default_value(cpy_path), "path to python module cpython")
-    ("srv_path",  po::value<std::string>(&srv_path)->default_value(srv_path), "path to python module server")
-    ("conf_file", po::value<std::string>(&conf_file)->default_value(conf_file), "config file for python module server");
+    ("help,h",      "print help message")
+    ("daemon",      "run as system daemon")
+    ("port",        po::value<int>(&port)->default_value(port), "port number to listen")
+    ("cpy_path",    po::value<std::string>(&cpy_path)->default_value(cpy_path), "path to python module cpython")
+    ("srv_path",    po::value<std::string>(&srv_path)->default_value(srv_path), "path to python module server")
+    ("pylib_path",  po::value<std::string>(&pylib_path)->default_value(srv_path), "path to python module pylib")
+    ("conf_file",   po::value<std::string>(&conf_file)->default_value(conf_file), "config file for python module server");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -59,7 +61,7 @@ int main(int argc, char* argv[]) {
     ::daemon(1, 1);
   }
 
-  auto factory = boost::make_shared<RouteServiceCloneFactory>(cpy_path, srv_path, conf_file);
+  auto factory = boost::make_shared<RouteServiceCloneFactory>(cpy_path, srv_path, pylib_path, conf_file);
   TThreadedServer server(
     boost::make_shared<RouteServiceProcessorFactory>(factory),
     boost::make_shared<TServerSocket>(port),

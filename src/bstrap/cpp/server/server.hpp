@@ -32,6 +32,7 @@ class RouteServiceCloneFactory : virtual public RouteServiceIfFactory {
 public:
   RouteServiceCloneFactory(const std::string& cpy_path,
     const std::string& srv_path,
+    const std::string& pylib_path,
     const std::string& conf_file);
 
   ~RouteServiceCloneFactory();

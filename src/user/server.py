@@ -1,11 +1,15 @@
 import route_pb2 as pb
 from cpython import CPython
+#import redis
 
 class Server(CPython):
     def __init__(self, *args):
-        #load cnf file
+        #load config file
         #do sth.
-        print args
+        '''print args
+        config = {}
+        execfile(args[0], config)
+        self.redis=redis.Redis('localhost')'''
         pass
 
     def recv_module_call_Ping(self, ping):

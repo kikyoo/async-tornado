@@ -13,6 +13,7 @@ public:
 
   bool import(const std::string&,
     const std::string&,
+    const std::string&,
     const std::string&);
 
   int hash_call(std::string& name_, 
