@@ -27,7 +27,10 @@ InvokerTask::InvokerTask(EventListType event_list,
 
 bool InvokerTask::connect(NodePtr node) {
   try {
-    boost::shared_ptr<TTransport> socket(new TSocket(node->host, node->port));
+    boost::shared_ptr<TSocket> socket(new TSocket(node->host, node->port));
+    socket->setConnTimeout(timeout_);
+    socket->setRecvTimeout(timeout_);
+    socket->setSendTimeout(timeout_);
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
     node->client_ptr = boost::make_shared<RouteServiceClient>(protocol);
