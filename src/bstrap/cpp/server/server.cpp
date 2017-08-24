@@ -22,10 +22,6 @@
 
 namespace kikyoo {
 
-void RouteServiceHandler::ping(std::string& _return, const std::string& ping) {
-  _return.assign("pong\n");
-}
-
 void RouteServiceHandler::call(Rslt& _return, const Msg& msg) {
   if (MsgType::H_CALL & msg.type) {
     _return.status = (RsltType::type)m_pobj_->hash_call(_return.name,
@@ -50,7 +46,8 @@ void RouteServiceHandler::message(const Msg& msg) {
   }
 }
 
-RouteServiceCloneFactory::RouteServiceCloneFactory(const std::string& cpy_path,
+RouteServiceCloneFactory::RouteServiceCloneFactory(int port,
+  const std::string& cpy_path,
   const std::string& srv_path,
   const std::string& pylib_path,
   const std::string& conf_file) {
@@ -58,7 +55,7 @@ RouteServiceCloneFactory::RouteServiceCloneFactory(const std::string& cpy_path,
   Py_Initialize(); 
 
   m_pobj_ = boost::make_shared<CPython>();
-  if (!m_pobj_->import(cpy_path, srv_path, pylib_path, conf_file)) {
+  if (!m_pobj_->import(port, cpy_path, srv_path, pylib_path, conf_file)) {
     abort();
   }
 }

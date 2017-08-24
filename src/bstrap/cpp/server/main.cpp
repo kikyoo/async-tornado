@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h",      "print help message")
-    ("daemon",      "run as system daemon")
+    //("daemon",      "run as system daemon")
     ("port",        po::value<int>(&port)->default_value(port), "port number to listen")
     ("cpy_path",    po::value<std::string>(&cpy_path)->default_value(cpy_path), "path to python module cpython")
     ("srv_path",    po::value<std::string>(&srv_path)->default_value(srv_path), "path to python module server")
@@ -56,12 +56,12 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  if (vm.count("daemon")) {
-    std::cout << "run in daemon" << std::endl;
-    ::daemon(1, 1);
-  }
+  //if (vm.count("daemon")) {
+  //  std::cout << "run in daemon" << std::endl;
+  //  ::daemon(1, 1);
+  //}
 
-  auto factory = boost::make_shared<RouteServiceCloneFactory>(cpy_path, srv_path, pylib_path, conf_file);
+  auto factory = boost::make_shared<RouteServiceCloneFactory>(port, cpy_path, srv_path, pylib_path, conf_file);
   TThreadedServer server(
     boost::make_shared<RouteServiceProcessorFactory>(factory),
     boost::make_shared<TServerSocket>(port),

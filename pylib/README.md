@@ -1,2 +1,2 @@
-#tornado
-#redis
+* tornado(Must)
+* redis(only as sample)

@@ -21,6 +21,9 @@ Protobuf
 
 Startup
 ========
-* python start_user_server.py
+* cd bin/
 
-* export LD_LIBRARY_PATH=cpplib/boost/lib:cpplib/thrift/lib && python bin/start_http_server.py
+* python start_user_server.py start
+
+* python start_http_server.py start
+

@@ -94,7 +94,7 @@ void Config::parse_config(PyObject* conf) {
     }
   }
 
-  std::cout << to_string(m_route_) << std::endl;
+  //std::cout << to_string(m_route_) << std::endl;
 }
 
 }

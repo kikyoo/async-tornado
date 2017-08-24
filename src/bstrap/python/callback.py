@@ -26,11 +26,11 @@ class Invoker(object):
             return cls
             
         elif pb.MSG_FORMAT == status:
-            raise MsgFormat('pb msg format error, name: %s' %name)
+            raise MsgFormat('pb msg format error')
         elif pb.RPC_TIMEOUT == status:
-            raise RPCTimeout('rpc call timeout, name: %s' %name)
+            raise RPCTimeout('rpc call timeout')
         elif pb.NO_METHOD == status:
-            raise NoMethod('server has no compatible method, name: %s' %name)
+            raise NoMethod('server has no compatible method')
         else:
             raise
 

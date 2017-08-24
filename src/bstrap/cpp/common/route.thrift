@@ -31,7 +31,6 @@ struct Rslt {
 
 service RouteService {
   Rslt   call(1: Msg msg),
-  void   message(1: Msg msg),
-  string ping(1: string ping),
+  void   message(1: Msg msg)
 }
 

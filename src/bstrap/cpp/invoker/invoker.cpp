@@ -50,9 +50,7 @@ void Invoker::init_invoker(PyObject* conf) {
     return;
   }
   rpc_queue_ = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);
-  std::cout << rpc_queue_->capacity() << std::endl;
   cb_queue_  = boost::make_shared<FifoQueue<CallbackPtr, NullMutex, Mutex>>(queue_size_);
-  std::cout << cb_queue_->capacity() << std::endl;
   rpc_queues_ = boost::make_shared<std::vector<RequestQueueType>>(config.host_max());
   for (size_t i=0; i<config.host_max(); i++) {
     (*rpc_queues_)[i] = boost::make_shared<FifoQueue<RpcPtr>>(queue_size_);

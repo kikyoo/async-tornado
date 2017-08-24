@@ -24,7 +24,8 @@ struct CPython::RefManager {
 CPython::CPython(): m_rmgr_(new CPython::RefManager) {
 }
 
-bool CPython::import(const std::string& cpy_path,
+bool CPython::import(int port,
+  const std::string& cpy_path,
   const std::string& srv_path,
   const std::string& pylib_path,
   const std::string& conf_file) {
@@ -62,13 +63,15 @@ bool CPython::import(const std::string& cpy_path,
     return false; 
   }
 
-  auto* pargs = PyTuple_New(1);
-  auto* item0 = Py_BuildValue("s", conf_file.c_str());
+  auto* pargs = PyTuple_New(2);
+  auto* item0 = Py_BuildValue("i", port);
+  auto* item1 = Py_BuildValue("s", conf_file.c_str());
   m_rmgr_->add_ref(pargs);
-  if (!pargs || !item0) {
+  if (!pargs || !item0 || !item1) {
     return false;
   }
   PyTuple_SetItem(pargs, 0, item0);
+  PyTuple_SetItem(pargs, 1, item1);
 
   m_inst_ = PyInstance_New(pClass, pargs, NULL);
   if (!m_inst_) {

@@ -64,11 +64,3 @@ Simple example:
             self.write('post handler')
     
 
-ToDo
----------
-This is only an Alpha version, many things need to do.
-
-* multi rpc-server support
-* log system
-* performance opt. && stability
-
