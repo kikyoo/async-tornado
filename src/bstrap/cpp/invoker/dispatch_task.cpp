@@ -19,7 +19,8 @@ DispatchTask::DispatchTask(EventListType event_list,
 }
 
 void DispatchTask::event_handle() {
-  const auto& list = event_list_->try_get();
+  std::list<NodePtr> list;
+  event_list_->try_get(list);
   for (const auto& node: list) {
     //std::cout << __FILE__ << ':' << __LINE__ << ' ' << node << std::endl;
     auto& server = servers_[node->server];

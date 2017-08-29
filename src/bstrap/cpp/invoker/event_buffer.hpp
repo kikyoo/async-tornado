@@ -12,21 +12,18 @@ class EventBuffer: boost::noncopyable {
 public:
   void push_back(const T& t) {
     ::apache::thrift::concurrency::Guard g(mutex_);
-    cur_.push_back(t);
+    m_list_.push_back(t);
   }
 
-  const std::list<T>& try_get() {
-    swp_.clear();
+  void try_get(std::list<T>& list) {
     if (mutex_.trylock()) {
-      cur_.swap(swp_);
+      list = std::move(m_list_);
       mutex_.unlock();
     }
-    return swp_;
   }
 
 private:
-  std::list<T> cur_;
-  std::list<T> swp_;
+  std::list<T> m_list_;
 
   ::apache::thrift::concurrency::Mutex mutex_;
 };
