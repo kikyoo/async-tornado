@@ -64,3 +64,7 @@ Simple example:
             self.write('post handler')
     
 
+To Do
+-------
+- 1. 自旋锁？
+- 2. 一致性 hash
